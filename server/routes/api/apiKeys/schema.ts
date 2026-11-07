@@ -25,7 +25,12 @@ export const APIKeysCreateSchema = BaseSchema.extend({
       .min(ApiKeyValidation.minNameLength)
       .max(ApiKeyValidation.maxNameLength),
     /** API Key expiry date */
-    expiresAt: z.coerce.date().optional(),
+    expiresAt: z.coerce
+      .date()
+      .refine((date) => date.getTime() > Date.now(), {
+        error: "expiresAt must be a date in the future",
+      })
+      .optional(),
     /** A list of scopes that this API key has access to */
     scope: z
       .array(

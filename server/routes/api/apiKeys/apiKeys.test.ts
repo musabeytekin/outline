@@ -11,21 +11,36 @@ const server = getTestServer();
 
 describe("#apiKeys.create", () => {
   it("should allow creating an api key with expiry", async () => {
-    const now = new Date();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const user = await buildUser();
 
     const res = await server.post("/api/apiKeys.create", user, {
       body: {
         name: "My API Key",
-        expiresAt: now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
       },
     });
     const body = await res.json();
 
     expect(res.status).toEqual(200);
     expect(body.data.name).toEqual("My API Key");
-    expect(body.data.expiresAt).toEqual(now.toISOString());
+    expect(body.data.expiresAt).toEqual(expiresAt.toISOString());
     expect(body.data.lastActiveAt).toBeNull();
+  });
+
+  it("should reject an expiry date in the past", async () => {
+    const user = await buildUser();
+
+    const res = await server.post("/api/apiKeys.create", user, {
+      body: {
+        name: "My API Key",
+        expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
+      },
+    });
+    const body = await res.json();
+
+    expect(res.status).toEqual(400);
+    expect(body.message).toContain("expiresAt must be a date in the future");
   });
 
   it("should allow creating an api key without expiry", async () => {
